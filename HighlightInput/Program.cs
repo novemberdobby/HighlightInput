@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows.Forms;
+using MKB = MouseKeyboardActivityMonitor;
 
 namespace HighlightInput
 {
@@ -10,7 +8,27 @@ namespace HighlightInput
     {
         static void Main(string[] args)
         {
+            var globalHooker = new MKB.WinApi.GlobalHooker();
 
+            var msListener = new MKB.MouseHookListener(globalHooker);
+            msListener.MouseClick += (object sender, MouseEventArgs eventArgs) =>
+            {
+                Console.WriteLine(eventArgs.Button);
+            };
+
+            var kbListener = new MKB.KeyboardHookListener(globalHooker);
+            kbListener.KeyDown += (object sender, KeyEventArgs eventArgs) =>
+            {
+                Console.WriteLine(eventArgs.KeyCode);
+            };
+
+            msListener.Start();
+            kbListener.Start();
+
+            Application.Run();
+
+            msListener.Stop();
+            kbListener.Stop();
         }
     }
 }
