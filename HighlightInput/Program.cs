@@ -6,29 +6,32 @@ namespace HighlightInput
 {
     class Program
     {
+
         static void Main(string[] args)
         {
             var globalHooker = new MKB.WinApi.GlobalHooker();
 
-            var msListener = new MKB.MouseHookListener(globalHooker);
-            msListener.MouseClick += (object sender, MouseEventArgs eventArgs) =>
+            using (var mouseOverlay = new MouseOverlay())
+            using (var msListener = new MKB.MouseHookListener(globalHooker))
+            using (var kbListener = new MKB.KeyboardHookListener(globalHooker))
             {
-                Console.WriteLine(eventArgs.Button);
-            };
+                msListener.MouseDown += (sender, eventArgs) => mouseOverlay.MouseDown(eventArgs);
+                msListener.MouseMove += (sender, eventArgs) => mouseOverlay.MouseMove(eventArgs);
+                msListener.MouseUp += (sender, eventArgs) => mouseOverlay.MouseUp(eventArgs);
 
-            var kbListener = new MKB.KeyboardHookListener(globalHooker);
-            kbListener.KeyDown += (object sender, KeyEventArgs eventArgs) =>
-            {
-                Console.WriteLine(eventArgs.KeyCode);
-            };
+                kbListener.KeyDown += (object sender, KeyEventArgs eventArgs) =>
+                {
+                    Console.WriteLine(eventArgs.KeyCode);
+                };
 
-            msListener.Start();
-            kbListener.Start();
+                msListener.Start();
+                kbListener.Start();
 
-            Application.Run();
+                Application.Run();
 
-            msListener.Stop();
-            kbListener.Stop();
+                msListener.Stop();
+                kbListener.Stop();
+            }
         }
     }
 }
