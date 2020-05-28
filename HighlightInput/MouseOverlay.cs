@@ -22,6 +22,7 @@ namespace HighlightInput
         #endregion
 
         #region State
+        private object m_lock = new object();
         private System.Drawing.Point m_position;
         private DateTime m_downTime = DateTime.MinValue;
         private bool m_isDown;
@@ -44,88 +45,103 @@ namespace HighlightInput
 
         public void MouseDown(MouseEventArgs args)
         {
-            m_button = args.Button;
-            m_position.X = args.X;
-            m_position.Y = args.Y;
-            m_downTime = DateTime.Now;
-            m_isDown = true;
+            lock (m_lock)
+            {
+                m_button = args.Button;
+                m_position.X = args.X;
+                m_position.Y = args.Y;
+                m_downTime = DateTime.Now;
+                m_isDown = true;
+            }
         }
 
         public void MouseMove(MouseEventArgs args)
         {
-            //if clicked, update the position
-            if (m_isDown)
+            lock (m_lock)
             {
-                m_position.X = args.X;
-                m_position.Y = args.Y;
+                //if clicked, update the position
+                if (m_isDown)
+                {
+                    m_position.X = args.X;
+                    m_position.Y = args.Y;
+                }
             }
         }
 
         public void MouseUp(MouseEventArgs args)
         {
-            m_isDown = false;
+            lock (m_lock)
+            {
+                m_isDown = false;
+            }
         }
         
         private void DrawGraphics(object sender, GameOverlay.Windows.DrawGraphicsEventArgs e)
         {
-            e.Graphics.ClearScene();
-
-            //if down, reset the time to keep it at max opacity
-            if (m_isDown)
+            lock (m_lock)
             {
-                if(c_growMillis > 0)
+                e.Graphics.ClearScene();
+
+                //if down, reset the time to keep it at max opacity
+                if (m_isDown)
                 {
-                    //if grow is enabled, only reset to max grow size - not initial click size
-                    double elapsed = DateTime.Now.Subtract(m_downTime).TotalMilliseconds;
-                    if(elapsed > c_growMillis)
+                    if(c_growMillis > 0)
                     {
-                        m_downTime = DateTime.Now.Subtract(TimeSpan.FromMilliseconds(c_growMillis));
+                        //if grow is enabled, only reset to max grow size - not initial click size
+                        double elapsed = DateTime.Now.Subtract(m_downTime).TotalMilliseconds;
+                        if(elapsed > c_growMillis)
+                        {
+                            m_downTime = DateTime.Now.Subtract(TimeSpan.FromMilliseconds(c_growMillis));
+                        }
+                    }
+                    else
+                    {
+                        m_downTime = DateTime.Now;
                     }
                 }
-                else
+
+                double millisElapsed = DateTime.Now.Subtract(m_downTime).TotalMilliseconds;
+                if (millisElapsed > c_growMillis + c_fadeMillis)
                 {
-                    m_downTime = DateTime.Now;
+                    return;
                 }
-            }
 
-            double millisElapsed = DateTime.Now.Subtract(m_downTime).TotalMilliseconds;
-            if (millisElapsed > c_growMillis + c_fadeMillis)
-            {
-                return;
-            }
+                //centre overlay on the click
+                m_overlay.Move(m_position.X - m_overlay.Width / 2, m_position.Y - m_overlay.Height / 2);
 
-            //centre overlay on the click
-            m_overlay.Move(m_position.X - m_overlay.Width / 2, m_position.Y - m_overlay.Height / 2);
+                float alpha = c_initialOpacity;
+                float radius = c_radius;
 
-            float alpha = c_initialOpacity;
-            float radius = c_radius;
+                if (c_growMillis > 0 && millisElapsed <= c_growMillis) //in grow stage
+                {
+                    radius *= (float)(millisElapsed / c_growMillis);
+                }
+                else //past grow stage
+                {
+                    alpha = c_initialOpacity * (1.0f - (float)((millisElapsed - c_growMillis) / c_fadeMillis));
+                }
 
-            if (c_growMillis > 0 && millisElapsed <= c_growMillis) //in grow stage
-            {
-                radius *= (float)(millisElapsed / c_growMillis);
-            }
-            else //past grow stage
-            {
-                alpha = c_initialOpacity * (1.0f - (float)((millisElapsed - c_growMillis) / c_fadeMillis));
-            }
+                GameOverlay.Drawing.Color curColour;
+                if (!c_colours.TryGetValue(m_button, out curColour))
+                {
+                    curColour = c_colours[MouseButtons.Left];
+                }
+                e.Graphics.FillCircle(e.Graphics.CreateSolidBrush(curColour.R, curColour.G, curColour.B, alpha), new GameOverlay.Drawing.Circle(m_overlay.Width / 2, m_overlay.Height / 2, radius));
 
-            GameOverlay.Drawing.Color curColour;
-            if (!c_colours.TryGetValue(m_button, out curColour))
-            {
-                curColour = c_colours[MouseButtons.Left];
-            }
-            e.Graphics.FillCircle(e.Graphics.CreateSolidBrush(curColour.R, curColour.G, curColour.B, alpha), new GameOverlay.Drawing.Circle(m_overlay.Width / 2, m_overlay.Height / 2, radius));
-
-            //if there's a border, render just outside the radius
-            if (c_borderWidth > 0)
-            {
-                e.Graphics.DrawCircle(e.Graphics.CreateSolidBrush(0, 0, 0, alpha), new GameOverlay.Drawing.Circle(m_overlay.Width / 2, m_overlay.Height / 2, radius + c_borderWidth / 2.0f), c_borderWidth * (radius / c_radius));
+                //if there's a border, render just outside the radius
+                if (c_borderWidth > 0)
+                {
+                    e.Graphics.DrawCircle(e.Graphics.CreateSolidBrush(0, 0, 0, alpha), new GameOverlay.Drawing.Circle(m_overlay.Width / 2, m_overlay.Height / 2, radius + c_borderWidth / 2.0f), c_borderWidth * (radius / c_radius));
+                }
             }
         }
 
         public void Dispose()
         {
-            m_overlay.Dispose();
+            lock (m_lock)
+            {
+                m_overlay.Dispose();
+            }
         }
     }
 }
