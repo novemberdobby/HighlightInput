@@ -43,7 +43,6 @@ namespace HighlightInput
                 new GameOverlay.Drawing.Graphics() { PerPrimitiveAntiAliasing = true, TextAntiAliasing = true });
 
             m_overlay.DrawGraphics += DrawGraphics;
-            m_overlay.FPS = 60;
             m_overlay.Create();
             
             m_overlay.IsTopmost = true;

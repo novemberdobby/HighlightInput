@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
@@ -37,7 +37,6 @@ namespace HighlightInput
             int windowSize = (int)((c_radius + c_borderWidth) * 2.1f);
             m_overlay = new GameOverlay.Windows.GraphicsWindow(0, 0, windowSize, windowSize, new GameOverlay.Drawing.Graphics() { PerPrimitiveAntiAliasing = true, TextAntiAliasing = true });
             m_overlay.DrawGraphics += DrawGraphics;
-            m_overlay.FPS = 60;
             m_overlay.Create();
             m_overlay.IsTopmost = true;
             m_overlay.Show();
