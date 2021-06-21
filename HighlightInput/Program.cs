@@ -18,6 +18,7 @@ namespace HighlightInput
                 msListener.MouseDown += (sender, eventArgs) => mouseOverlay.MouseDown(eventArgs);
                 msListener.MouseMove += (sender, eventArgs) => mouseOverlay.MouseMove(eventArgs);
                 msListener.MouseUp += (sender, eventArgs) => mouseOverlay.MouseUp(eventArgs);
+                msListener.MouseWheel += (sender, eventArgs) => mouseOverlay.MouseWheel(eventArgs);
 
                 kbListener.KeyDown += (sender, eventArgs) => kbOverlay.KeyDown(eventArgs);
 

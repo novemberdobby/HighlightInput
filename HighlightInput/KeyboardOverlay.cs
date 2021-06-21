@@ -129,6 +129,12 @@ namespace HighlightInput
                         return;
                     }
 
+                    //'flash' by not displaying immediately on keyboard input, makes it easier to see when different keys are pressed
+                    if(millisElapsed < 30)
+                    {
+                        return;
+                    }
+
                     float alpha = 1.0f;
                     if(millisElapsed > c_fadeStartDelay)
                     {
